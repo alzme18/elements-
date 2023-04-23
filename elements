@@ -1,0 +1,900 @@
+# --~~--Imports--~~-- #
+import pygame; pygame.init(); import random; import pygame.freetype
+# --~~--Variables--~~-- #
+play = True
+
+Objects = [1, 2]  # <-- the platform numbers(length <= length of others)
+ObjectX = [0, 0]  # <-- X position of the platform(leftmost point)
+ObjectY = [500, 0]  # <-- Y position of the platform(topmost point)
+ObjectWidth = [800, 50]  # <-- width of the platforms
+ObjectHeight = [285, 600]  # <-- height of the platforms
+Enemies = [1]
+EnemyX = [400]
+EnemyY = [490]
+EnemyTick = [0]
+EnemyT = [0]
+EnemyXvel = [0]
+EnemyYvel = [0]
+EnemyHp = [10]
+Gravity = 2  # <-- Changes how much the falling speed increases every frame
+Holdless = Gravity / 4  # <-- Changes the amount holding the jump button decreases the acending gravity
+
+primarycharge = -1
+primary = 1
+secondary = 2
+trimary = 4
+basic = 0
+
+X = 650
+IX = 650
+Y = 480
+IY = 480
+Yvel = 0
+Xvel = 0
+cloakr = 255
+cloakg = 0
+cloakb = 0
+cloak = 0  # <-- controls the line on the front of the cloak. if it is 1 it is the inverse of the cloak's color, otherwise it is black
+window = pygame.display.set_mode([1920, 1080])
+spells = [""]  # <-- Spell names(all of them)
+# -Leave Empty- #
+projectileX = []
+projectileY = []
+projectileT = []
+projectileD = []
+projectileXvel = []
+projectileYvel = []
+projectileG = []
+projectileTick = []
+# -True is Right, False is Left(which way the player is looking)- #
+playerD = True
+# -~-Do Not Disturb-~- #
+right = False
+left = False
+up = False
+space = False
+down = False
+mousehold = False
+e = False
+q = False
+r = False
+pound = False
+primarycooldown = 100
+secondarycooldown = 100
+basiccooldown = 100
+trimarycooldown = 100
+primaryD = 10
+secondaryD = 20
+trimaryD = 30
+basicD = 3
+clock = pygame.time.Clock()
+
+while play:
+    window.fill((255, 255, 255))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            play = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_d:
+                right = True
+            if event.key == pygame.K_a:
+                left = True
+            if event.key == pygame.K_w:
+                up = True
+            if event.key == pygame.K_s:
+                down = True
+            if event.key == pygame.K_SPACE:
+                space = True
+            if event.key == pygame.K_e:
+                e = True
+            if event.key == pygame.K_q:
+                q = True
+            if event.key == pygame.K_p:
+                EnemyTick.append(0)
+                EnemyX.append(random.randint(0, 800))
+                EnemyY.append(490)
+                EnemyT.append(0)
+                EnemyXvel.append(0)
+                EnemyYvel.append(0)
+                Enemies.append(len(Enemies)+1)
+                EnemyHp.append(10)
+            if event.key == pygame.K_r:
+                if trimary == 4:
+                    rupdater = 0
+                    for i in range(len(Objects)):
+                        CObjectWidth = ObjectWidth[i]
+                        CObjectX = ObjectX[i]
+                        CObjectY = ObjectY[i]
+                        CObjectHeight = ObjectHeight[i]
+                        if (IY + Yvel >= CObjectY - 100 and IY + Yvel <= CObjectY + CObjectHeight and (IX >= CObjectX - 5 and IX <= CObjectX + CObjectWidth + 5)):
+                            rupdater += 1
+                    if rupdater == 0:
+                        pound = True
+                else:
+                    r = True
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_d:
+                right = False
+            if event.key == pygame.K_a:
+                left = False
+            if event.key == pygame.K_w:
+                up = False
+            if event.key == pygame.K_s:
+                down = False
+            if event.key == pygame.K_SPACE:
+                space = False
+            if event.key == pygame.K_e:
+                e = False
+            if event.key == pygame.K_q:
+                q = False
+            if event.key == pygame.K_r:
+                if trimary != 4:
+                    r = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mousehold = True
+        if event.type == pygame.MOUSEBUTTONUP:
+            mousehold = False
+    # --~~--Cast Spell--~~-- #
+    if mousehold and basiccooldown > 5:
+        basiccooldown = 0
+        casttype = 0
+        castD = basicD
+    if q and primarycooldown > 20 and primary != 0:
+        primarycooldown = 0
+        casttype = primary
+        castD = primaryD
+    if e and secondarycooldown > 40 and secondary != 0:
+        secondarycooldown = 0
+        casttype = secondary
+        castD = secondaryD
+    if r and trimarycooldown > 60 and trimary != 0 and trimary != 4:
+        trimarycooldown = 0
+        casttype = trimary
+        castD = trimaryD
+    x, y = pygame.mouse.get_pos()
+    if x > X:
+        playerD = True
+    else:
+        playerD = False
+    Yvel += Gravity
+    if pound:
+        Yvel += Gravity * 2
+    if (up or space) and Yvel < 0:
+        Yvel -= Holdless
+    for i in range(len(Objects)):
+        CObjectWidth = ObjectWidth[i]
+        CObjectX = ObjectX[i]
+        CObjectY = ObjectY[i]
+        CObjectHeight = ObjectHeight[i]
+        if IY + Yvel >= CObjectY - 19 and IY <= CObjectY + CObjectHeight + 1 and (up or space) and (IX >= CObjectX - 5 and IX <= CObjectX + CObjectWidth + 5):
+            Yvel = -19
+            if pound:
+                Yvel = 0
+                pound = False
+                projectileT.append(4)
+                projectileD.append(30)
+                projectileT.append(4)
+                projectileD.append(30)
+                projectileX.append(X)
+                projectileY.append(CObjectY)
+                projectileYvel.append(-14)
+                projectileXvel.append(10)
+                projectileG.append(4)
+                projectileTick.append(200)
+                projectileX.append(X)
+                projectileY.append(CObjectY)
+                projectileYvel.append(-14)
+                projectileXvel.append(-10)
+                projectileG.append(4)
+                projectileTick.append(200)
+        if IY + Yvel >= CObjectY - 18 and IY + 20 + Yvel <= CObjectY + CObjectHeight and (IX >= CObjectX - 5 and IX <= CObjectX + CObjectWidth + 5):
+            if pound:
+                Yvel = 0
+                pound = False
+                projectileT.append(4)
+                projectileD.append(30)
+                projectileT.append(4)
+                projectileD.append(30)
+                projectileX.append(X)
+                projectileY.append(CObjectY)
+                projectileYvel.append(-14)
+                projectileXvel.append(10)
+                projectileG.append(4)
+                projectileTick.append(200)
+                projectileX.append(X)
+                projectileY.append(CObjectY)
+                projectileYvel.append(-14)
+                projectileXvel.append(-10)
+                projectileG.append(4)
+                projectileTick.append(200)
+            Yvel = int(Yvel * -0.25)
+    IY += Yvel
+    Y = round(IY)
+    if right:
+        Xvel += 4
+    if left:
+        Xvel -= 4
+    Xvel *= 0.7
+    for i in range(len(Objects)):
+        CObjectWidth = ObjectWidth[i]
+        CObjectX = ObjectX[i]
+        CObjectY = ObjectY[i]
+        CObjectHeight = ObjectHeight[i]
+        if IY <= CObjectY + CObjectHeight and IY >= CObjectY - 10 and (IX+Xvel >= CObjectX - 12 and IX+Xvel <= CObjectX + CObjectWidth+12):
+            Xvel *= -0.25
+    if IX + Xvel >= 800 or IX + Xvel <= 0:
+        Xvel *= -0.25
+    IX += Xvel
+    X = round(IX)
+    # --~~--Create Projectile--~~-- #
+    if primarycooldown == 0 or secondarycooldown == 0 or basiccooldown == 0 or trimarycooldown == 0:
+        projectileT.append(casttype)
+        projectileD.append(castD)
+        if x > X - (Y-y) and x < X + (Y-y) and Y > y:
+            if casttype == 0:
+                projectileX.append(X)
+            else:
+                projectileX.append(X+random.randint(-5, 5))
+            if casttype == 0:
+                projectileY.append(Y-5)
+            else:
+                projectileY.append(Y)
+            if casttype == 0:
+                projectileXvel.append(0)
+                projectileYvel.append(-1)
+            elif casttype == 1:
+                projectileXvel.append(random.randint(-5, 5)/10)
+                projectileYvel.append(-20)
+            elif casttype == 2:
+                projectileXvel.append(0)
+                projectileYvel.append(-40)
+        elif not playerD:
+            if casttype == 0:
+                projectileX.append(X-5)
+            else:
+                projectileX.append(X)
+            if casttype == 0:
+                projectileY.append(Y)
+            else:
+                projectileY.append(Y+random.randint(-5, 5))
+            if casttype == 0:
+                projectileXvel.append(-1)
+                projectileYvel.append(0)
+            elif casttype == 1:
+                projectileYvel.append(random.randint(-5, 5)/10)
+                projectileXvel.append(-20)
+            elif casttype == 2:
+                projectileYvel.append(0)
+                projectileXvel.append(-40)
+            playerD = False
+        elif playerD:
+            if casttype == 0:
+                projectileX.append(X+5)
+            else:
+                projectileX.append(X)
+            if casttype == 0:
+                projectileY.append(Y)
+            else:
+                projectileY.append(Y+random.randint(-5, 5))
+            if casttype == 0:
+                projectileXvel.append(1)
+                projectileYvel.append(0)
+            elif casttype == 1:
+                projectileYvel.append(random.randint(-5, 5)/10)
+                projectileXvel.append(20)
+            elif casttype == 2:
+                projectileYvel.append(0)
+                projectileXvel.append(40)
+            playerD = True
+        else:
+            if casttype == 0:
+                projectileX.append(X+5)
+            else:
+                projectileX.append(X)
+            if casttype == 0:
+                projectileY.append(Y)
+            else:
+                projectileY.append(Y+random.randint(-5, 5))
+            if casttype == 0:
+                projectileXvel.append(-1)
+                projectileYvel.append(0)
+            elif casttype == 1:
+                projectileYvel.append(random.randint(-5, 5)/10)
+                projectileXvel.append(20)
+            elif casttype == 2:
+                projectileYvel.append(0)
+                projectileXvel.append(40)
+            playerD = True
+        if casttype == 1:
+            projectileG.append(random.randint(-5, 5)/100)
+        else:
+            projectileG.append(0)
+        if casttype == 0:
+            projectileTick.append(497)
+        else:
+            projectileTick.append(0)
+    # -~-Projectiles Move-~- #
+    for i in range(len(projectileT)):
+        Yupdater = projectileY[0]
+        projectileY.remove(projectileY[0])
+        Xupdater = projectileX[0]
+        projectileX.remove(projectileX[0])
+        Dupdater = projectileD[0]
+        projectileD.remove(projectileD[0])
+        Gupdater = projectileG[0]
+        projectileG.remove(projectileG[0])
+        Xvelupdater = projectileXvel[0]
+        projectileXvel.remove(projectileXvel[0])
+        Yvelupdater = projectileYvel[0]
+        projectileYvel.remove(projectileYvel[0])
+        Tupdater = projectileT[0]
+        projectileT.remove(projectileT[0])
+        Tickupdater = projectileTick[0]
+        projectileTick.remove(projectileTick[0])
+        Tickupdater += 1
+        Yvelupdater += Gupdater
+        if Tupdater != 4:
+            Yupdater += Yvelupdater
+            Xupdater += Xvelupdater
+        # -~-Fireball-~- #
+        if Tupdater == 1:
+            if abs(Xvelupdater) > abs(Yvelupdater):
+                pygame.draw.ellipse(window,(255,220,0),pygame.Rect(round(Xupdater-10),round(Yupdater-8),20,16))
+                for i in range(2):
+                    if Xvelupdater < 0:
+                        lineX = random.randint(5, 10)
+                        lineY = random.randint(-7, 7)
+                    else:
+                        lineX = random.randint(-5, 5)
+                        lineY = random.randint(-7, 7)
+                    pygame.draw.line(window, (255, 220, 0), (round(Xupdater+lineX), round(Yupdater+lineY)), (round(Xupdater+lineX-10), round(Yupdater+lineY)), 2)
+                if Xvelupdater < 0:
+                    pygame.draw.circle(window, (255, 255, 100), (round(Xupdater-4), round(Yupdater)), 4)
+                    for i in range(len(Enemies)):
+                        CEnemyE = Enemies[0]
+                        Enemies.remove(Enemies[0])
+                        CEnemyTick = EnemyTick[0]
+                        EnemyTick.remove(EnemyTick[0])
+                        CEnemyX = EnemyX[0]
+                        EnemyX.remove(EnemyX[0])
+                        CEnemyY = EnemyY[0]
+                        EnemyY.remove(EnemyY[0])
+                        CEnemyT = EnemyT[0]
+                        EnemyT.remove(EnemyT[0])
+                        CEnemyXvel = EnemyXvel[0]
+                        EnemyXvel.remove(EnemyXvel[0])
+                        CEnemyYvel = EnemyYvel[0]
+                        EnemyYvel.remove(EnemyYvel[0])
+                        CEnemyHp = EnemyHp[0]
+                        EnemyHp.remove(EnemyHp[0])
+                        if (CEnemyX - 10 <= Xupdater + 1 and CEnemyX + 10 >= Xupdater - 9 and CEnemyY + 10 >= Yupdater - 5 and CEnemyY - 10 <= Yupdater + 5):
+                            CEnemyHp -= Dupdater
+                            if CEnemyX > Xupdater - Xvelupdater:
+                                CEnemyXvel += Dupdater
+                            elif CEnemyX < Xupdater - Xvelupdater:
+                                CEnemyXvel -= Dupdater
+                            CEnemyYvel -= Dupdater / 2
+                        if CEnemyHp > 0:
+                            EnemyTick.append(CEnemyTick)
+                            EnemyX.append(CEnemyX)
+                            EnemyY.append(CEnemyY)
+                            EnemyT.append(CEnemyT)
+                            EnemyXvel.append(CEnemyXvel)
+                            EnemyYvel.append(CEnemyYvel)
+                            Enemies.append(CEnemyE)
+                            EnemyHp.append(CEnemyHp)
+                        else:
+                            Tickupdater = 500
+                else:
+                    pygame.draw.circle(window, (255, 255, 100), (round(Xupdater+4), round(Yupdater)), 4)
+                    for i in range(len(Enemies)):
+                        CEnemyE = Enemies[0]
+                        Enemies.remove(Enemies[0])
+                        CEnemyTick = EnemyTick[0]
+                        EnemyTick.remove(EnemyTick[0])
+                        CEnemyX = EnemyX[0]
+                        EnemyX.remove(EnemyX[0])
+                        CEnemyY = EnemyY[0]
+                        EnemyY.remove(EnemyY[0])
+                        CEnemyT = EnemyT[0]
+                        EnemyT.remove(EnemyT[0])
+                        CEnemyXvel = EnemyXvel[0]
+                        EnemyXvel.remove(EnemyXvel[0])
+                        CEnemyYvel = EnemyYvel[0]
+                        EnemyYvel.remove(EnemyYvel[0])
+                        CEnemyHp = EnemyHp[0]
+                        EnemyHp.remove(EnemyHp[0])
+                        if (CEnemyX - 10 <= Xupdater + 9 and CEnemyX + 10 >= Xupdater - 1 and CEnemyY + 10 >= Yupdater - 5 and CEnemyY - 10 <= Yupdater + 5):
+                            CEnemyHp -= Dupdater
+                            if CEnemyX > Xupdater - Xvelupdater:
+                                CEnemyXvel += Dupdater
+                            elif CEnemyX < Xupdater - Xvelupdater:
+                                CEnemyXvel -= Dupdater
+                            CEnemyYvel -= Dupdater / 2
+                            Tickupdater = 500
+                        if CEnemyHp > 0:
+                            EnemyTick.append(CEnemyTick)
+                            EnemyX.append(CEnemyX)
+                            EnemyY.append(CEnemyY)
+                            EnemyT.append(CEnemyT)
+                            EnemyXvel.append(CEnemyXvel)
+                            EnemyYvel.append(CEnemyYvel)
+                            Enemies.append(CEnemyE)
+                            EnemyHp.append(CEnemyHp)
+            else:
+                for i in range(2):
+                    if Yvelupdater < 0:
+                        lineX = random.randint(-7, 7)
+                        lineY = random.randint(5, 15)
+                    else:
+                        lineX = random.randint(-7, 7)
+                        lineY = random.randint(-15, -5)
+                    pygame.draw.line(window, (255, 220, 0), (round(Xupdater+lineX), round(Yupdater+lineY-10)), (round(Xupdater+lineX), round(Yupdater+lineY)), 2)
+                pygame.draw.ellipse(window, (255, 220, 0), pygame.Rect(round(Xupdater-8), round(Yupdater-10), 16, 20))
+                pygame.draw.circle(window, (255, 255, 100), (round(Xupdater), round(Yupdater-4)), 4)
+                for i in range(len(Enemies)):
+                    CEnemyE = Enemies[0]
+                    Enemies.remove(Enemies[0])
+                    CEnemyTick = EnemyTick[0]
+                    EnemyTick.remove(EnemyTick[0])
+                    CEnemyX = EnemyX[0]
+                    EnemyX.remove(EnemyX[0])
+                    CEnemyY = EnemyY[0]
+                    EnemyY.remove(EnemyY[0])
+                    CEnemyT = EnemyT[0]
+                    EnemyT.remove(EnemyT[0])
+                    CEnemyXvel = EnemyXvel[0]
+                    EnemyXvel.remove(EnemyXvel[0])
+                    CEnemyYvel = EnemyYvel[0]
+                    EnemyYvel.remove(EnemyYvel[0])
+                    CEnemyHp = EnemyHp[0]
+                    EnemyHp.remove(EnemyHp[0])
+                    if CEnemyX - 10 <= Xupdater + 5 and CEnemyX + 10 >= Xupdater - 5 and CEnemyY + 10 >= Yupdater - 9 and CEnemyY - 10 <= Yupdater + 1:
+                        CEnemyHp -= Dupdater
+                        if CEnemyX > Xupdater - Xvelupdater:
+                            CEnemyXvel += Dupdater
+                        elif CEnemyX < Xupdater - Xvelupdater:
+                            CEnemyXvel -= Dupdater
+                        CEnemyYvel -= Dupdater / 2
+                        Tickupdater = 500
+                    if CEnemyHp > 0:
+                        EnemyTick.append(CEnemyTick)
+                        EnemyX.append(CEnemyX)
+                        EnemyY.append(CEnemyY)
+                        EnemyT.append(CEnemyT)
+                        EnemyXvel.append(CEnemyXvel)
+                        EnemyYvel.append(CEnemyYvel)
+                        Enemies.append(CEnemyE)
+                        EnemyHp.append(CEnemyHp)
+            # -~-Colision Script-~- #
+            for i in range(len(Objects)):
+                CObjectWidth = ObjectWidth[i]
+                CObjectX = ObjectX[i]
+                CObjectY = ObjectY[i]
+                CObjectHeight = ObjectHeight[i]
+                if Yupdater + Yvelupdater >= CObjectY - 5 and Yupdater <= CObjectY + CObjectHeight and Xupdater >= CObjectX - 10 and Xupdater <= CObjectX + CObjectWidth + 10:
+                    Tickupdater = 1000
+        # -~-Lightning Strike-~- #
+        elif Tupdater == 2:
+            if abs(Xvelupdater) > abs(Yvelupdater):
+                for i in range(3):
+                    pygame.draw.line(window, (255, 255, random.randint(0, 255)), (round(Xupdater+i*15), round(Yupdater+random.randint(-5, 5))), (round(Xupdater+(i+1)*15), round(Yupdater+random.randint(-5,5))), 3)
+                for i in range(len(Enemies)):
+                    CEnemyE = Enemies[0]
+                    Enemies.remove(Enemies[0])
+                    CEnemyTick = EnemyTick[0]
+                    EnemyTick.remove(EnemyTick[0])
+                    CEnemyX = EnemyX[0]
+                    EnemyX.remove(EnemyX[0])
+                    CEnemyY = EnemyY[0]
+                    EnemyY.remove(EnemyY[0])
+                    CEnemyT = EnemyT[0]
+                    EnemyT.remove(EnemyT[0])
+                    CEnemyXvel = EnemyXvel[0]
+                    EnemyXvel.remove(EnemyXvel[0])
+                    CEnemyYvel = EnemyYvel[0]
+                    EnemyYvel.remove(EnemyYvel[0])
+                    CEnemyHp = EnemyHp[0]
+                    EnemyHp.remove(EnemyHp[0])
+                    if (CEnemyX - 10 <= Xupdater + 20 and CEnemyX + 10 >= Xupdater and CEnemyY + 10 >= Yupdater-10 and CEnemyY - 10 <= Yupdater+10):
+                        CEnemyHp -= Dupdater
+                        if CEnemyX > Xupdater - Xvelupdater:
+                            CEnemyXvel += Dupdater
+                        elif CEnemyX < Xupdater - Xvelupdater:
+                            CEnemyXvel -= Dupdater
+                        CEnemyYvel -= Dupdater / 2
+                    if CEnemyHp > 0:
+                        EnemyTick.append(CEnemyTick)
+                        EnemyX.append(CEnemyX)
+                        EnemyY.append(CEnemyY)
+                        EnemyT.append(CEnemyT)
+                        EnemyXvel.append(CEnemyXvel)
+                        EnemyYvel.append(CEnemyYvel)
+                        Enemies.append(CEnemyE)
+                        EnemyHp.append(CEnemyHp)
+            else:
+                for i in range(3):
+                    pygame.draw.line(window,(255,255,random.randint(0,255)),(round(Xupdater+random.randint(-5,5)),round(Yupdater+i*15)),(round(Xupdater+random.randint(-5,5)),round(Yupdater+(i+1)*15)),3)
+                for i in range(len(Enemies)):
+                    CEnemyE = Enemies[0]
+                    Enemies.remove(Enemies[0])
+                    CEnemyTick = EnemyTick[0]
+                    EnemyTick.remove(EnemyTick[0])
+                    CEnemyX = EnemyX[0]
+                    EnemyX.remove(EnemyX[0])
+                    CEnemyY = EnemyY[0]
+                    EnemyY.remove(EnemyY[0])
+                    CEnemyT = EnemyT[0]
+                    EnemyT.remove(EnemyT[0])
+                    CEnemyXvel = EnemyXvel[0]
+                    EnemyXvel.remove(EnemyXvel[0])
+                    CEnemyYvel = EnemyYvel[0]
+                    EnemyYvel.remove(EnemyYvel[0])
+                    CEnemyHp = EnemyHp[0]
+                    EnemyHp.remove(EnemyHp[0])
+                    if (CEnemyX - 10 <= Xupdater + 10 and CEnemyX + 10 >= Xupdater - 5 and CEnemyY + 10 >= Yupdater and CEnemyY - 10 <= Yupdater + 20):
+                        CEnemyHp -= Dupdater
+                        if CEnemyX > Xupdater - Xvelupdater:
+                            CEnemyXvel += Dupdater
+                        elif CEnemyX < Xupdater - Xvelupdater:
+                            CEnemyXvel -= Dupdater
+                        CEnemyYvel -= Dupdater / 2
+                    if CEnemyHp > 0:
+                        EnemyTick.append(CEnemyTick)
+                        EnemyX.append(CEnemyX)
+                        EnemyY.append(CEnemyY)
+                        EnemyT.append(CEnemyT)
+                        EnemyXvel.append(CEnemyXvel)
+                        Enemies.append(CEnemyE)
+                        EnemyHp.append(CEnemyHp)
+        # -~-Wind Slash-~- #
+        elif Tupdater == 0:
+            pygame.draw.circle(window,(200,200,200),(round(Xupdater),round(Yupdater)),30)
+            if abs(Xvelupdater) > abs(Yvelupdater):
+                if Xvelupdater < 0:
+                    pygame.draw.circle(window,(255,255,255),(round(Xupdater+int(10-(Tickupdater-497)*2)),round(Yupdater)),30)
+                    for i in range(len(Enemies)):
+                        CEnemyE = Enemies[0]
+                        Enemies.remove(Enemies[0])
+                        CEnemyTick = EnemyTick[0]
+                        EnemyTick.remove(EnemyTick[0])
+                        CEnemyX = EnemyX[0]
+                        EnemyX.remove(EnemyX[0])
+                        CEnemyY = EnemyY[0]
+                        EnemyY.remove(EnemyY[0])
+                        CEnemyT = EnemyT[0]
+                        EnemyT.remove(EnemyT[0])
+                        CEnemyXvel = EnemyXvel[0]
+                        EnemyXvel.remove(EnemyXvel[0])
+                        CEnemyYvel = EnemyYvel[0]
+                        EnemyYvel.remove(EnemyYvel[0])
+                        CEnemyHp = EnemyHp[0]
+                        EnemyHp.remove(EnemyHp[0])
+                        if (CEnemyX - 10 <= Xupdater - 30 and CEnemyX + 10 >= Xupdater - 25 and CEnemyY + 10 >= Yupdater - 30 and CEnemyY - 10 <= Yupdater + 30):
+                            CEnemyHp -= Dupdater
+                            if CEnemyX > Xupdater - Xvelupdater:
+                                CEnemyXvel += Dupdater
+                            elif CEnemyX < Xupdater - Xvelupdater:
+                                CEnemyXvel -= Dupdater
+                            CEnemyYvel -= Dupdater / 2
+                        if CEnemyHp > 0:
+                            EnemyTick.append(CEnemyTick)
+                            EnemyX.append(CEnemyX)
+                            EnemyY.append(CEnemyY)
+                            EnemyT.append(CEnemyT)
+                            EnemyXvel.append(CEnemyXvel)
+                            EnemyYvel.append(CEnemyYvel)
+                            Enemies.append(CEnemyE)
+                            EnemyHp.append(CEnemyHp)
+                else:
+                    pygame.draw.circle(window,(255,255,255),(round(Xupdater-int(10-(Tickupdater-497)*2)),round(Yupdater)),30)
+                    for i in range(len(Enemies)):
+                        CEnemyE = Enemies[0]
+                        Enemies.remove(Enemies[0])
+                        CEnemyTick = EnemyTick[0]
+                        EnemyTick.remove(EnemyTick[0])
+                        CEnemyX = EnemyX[0]
+                        EnemyX.remove(EnemyX[0])
+                        CEnemyY = EnemyY[0]
+                        EnemyY.remove(EnemyY[0])
+                        CEnemyT = EnemyT[0]
+                        EnemyT.remove(EnemyT[0])
+                        CEnemyXvel = EnemyXvel[0]
+                        EnemyXvel.remove(EnemyXvel[0])
+                        CEnemyYvel = EnemyYvel[0]
+                        EnemyYvel.remove(EnemyYvel[0])
+                        CEnemyHp = EnemyHp[0]
+                        EnemyHp.remove(EnemyHp[0])
+                        if (CEnemyX - 10 <= Xupdater + 30 and CEnemyX + 10 >= Xupdater + 25 and CEnemyY + 10 >= Yupdater - 30 and CEnemyY - 10 <= Yupdater + 30):
+                            CEnemyHp -= Dupdater
+                            if CEnemyX > Xupdater - Xvelupdater:
+                                CEnemyXvel += Dupdater
+                            elif CEnemyX < Xupdater - Xvelupdater:
+                                CEnemyXvel -= Dupdater
+                            CEnemyYvel -= Dupdater / 2
+                        if CEnemyHp > 0:
+                            EnemyTick.append(CEnemyTick)
+                            EnemyX.append(CEnemyX)
+                            EnemyY.append(CEnemyY)
+                            EnemyT.append(CEnemyT)
+                            EnemyXvel.append(CEnemyXvel)
+                            EnemyYvel.append(CEnemyYvel)
+                            Enemies.append(CEnemyE)
+                            EnemyHp.append(CEnemyHp)
+            else:
+                pygame.draw.circle(window,(255,255,255),(round(Xupdater),round(Yupdater+int(10-(Tickupdater-497)*2))),30)
+                for i in range(len(Enemies)):
+                    CEnemyE = Enemies[0]
+                    Enemies.remove(Enemies[0])
+                    CEnemyTick = EnemyTick[0]
+                    EnemyTick.remove(EnemyTick[0])
+                    CEnemyX = EnemyX[0]
+                    EnemyX.remove(EnemyX[0])
+                    CEnemyY = EnemyY[0]
+                    EnemyY.remove(EnemyY[0])
+                    CEnemyT = EnemyT[0]
+                    EnemyT.remove(EnemyT[0])
+                    CEnemyXvel = EnemyXvel[0]
+                    EnemyXvel.remove(EnemyXvel[0])
+                    CEnemyYvel = EnemyYvel[0]
+                    EnemyYvel.remove(EnemyYvel[0])
+                    CEnemyHp = EnemyHp[0]
+                    EnemyHp.remove(EnemyHp[0])
+                    if (CEnemyX - 10 <= Xupdater + 25 and CEnemyX + 10 >= Xupdater - 25 and CEnemyY + 10 >= Yupdater - 30 and CEnemyY - 10 <= Yupdater - 25):
+                        CEnemyHp -= Dupdater
+                        if CEnemyX > Xupdater - Xvelupdater:
+                            CEnemyXvel += Dupdater
+                        elif CEnemyX < Xupdater - Xvelupdater:
+                            CEnemyXvel -= Dupdater
+                        CEnemyYvel -= Dupdater / 2
+                    if CEnemyHp > 0:
+                        EnemyTick.append(CEnemyTick)
+                        EnemyX.append(CEnemyX)
+                        EnemyY.append(CEnemyY)
+                        EnemyT.append(CEnemyT)
+                        EnemyXvel.append(CEnemyXvel)
+                        EnemyYvel.append(CEnemyYvel)
+                        Enemies.append(CEnemyE)
+                        EnemyHp.append(CEnemyHp)
+        # -~-Earth Pound-~- #
+        elif Tupdater == 4:
+            # -~-Colision Script-~- #
+            for i in range(len(Objects)):
+                CObjectWidth = ObjectWidth[i]
+                CObjectX = ObjectX[i]
+                CObjectY = ObjectY[i]
+                CObjectHeight = ObjectHeight[i]
+                if Yupdater + Yvelupdater >= CObjectY - 8 and Yupdater <= CObjectY + CObjectHeight and Xupdater >= CObjectX - 10 and Xupdater <= CObjectX + CObjectWidth + 10:
+                    Yvelupdater *= 0.75
+            for i in range(len(Enemies)):
+                CEnemyE = Enemies[0]
+                Enemies.remove(Enemies[0])
+                CEnemyTick = EnemyTick[0]
+                EnemyTick.remove(EnemyTick[0])
+                CEnemyX = EnemyX[0]
+                EnemyX.remove(EnemyX[0])
+                CEnemyY = EnemyY[0]
+                EnemyY.remove(EnemyY[0])
+                CEnemyT = EnemyT[0]
+                EnemyT.remove(EnemyT[0])
+                CEnemyXvel = EnemyXvel[0]
+                EnemyXvel.remove(EnemyXvel[0])
+                CEnemyYvel = EnemyYvel[0]
+                EnemyYvel.remove(EnemyYvel[0])
+                CEnemyHp = EnemyHp[0]
+                EnemyHp.remove(EnemyHp[0])
+                if (CEnemyX - 10 <= Xupdater + 5 and CEnemyX + 10 >= Xupdater - 5 and CEnemyY + 10 >= Yupdater - 20 and CEnemyY - 10 <= Yupdater + 20):
+                    CEnemyHp -= Dupdater
+                    if CEnemyX > Xupdater - Xvelupdater:
+                        CEnemyXvel += Dupdater
+                    elif CEnemyX < Xupdater - Xvelupdater:
+                        CEnemyXvel -= Dupdater
+                    CEnemyYvel -= Dupdater / 2
+                if CEnemyHp > 0:
+                    EnemyTick.append(CEnemyTick)
+                    EnemyX.append(CEnemyX)
+                    EnemyY.append(CEnemyY)
+                    EnemyT.append(CEnemyT)
+                    EnemyXvel.append(CEnemyXvel)
+                    EnemyYvel.append(CEnemyYvel)
+                    Enemies.append(CEnemyE)
+                    EnemyHp.append(CEnemyHp)
+            Yupdater += Yvelupdater
+            Xupdater += Xvelupdater
+            pygame.draw.ellipse(window,(160,160,160),pygame.Rect(round(Xupdater-5),round(Yupdater-10),10,20))
+            pygame.draw.ellipse(window,(140,140,140),pygame.Rect(round(Xupdater-7),round(Yupdater),14,20))
+            pygame.draw.ellipse(window,(100,100,100),pygame.Rect(round(Xupdater-10),round(Yupdater+10),20,20))
+        if Xupdater < 1300 and Xupdater > 0 and Yupdater < 600 and Yupdater > 0 and Tickupdater < 500:
+            projectileY.append(Yupdater)
+            projectileX.append(Xupdater)
+            projectileD.append(Dupdater)
+            projectileG.append(Gupdater)
+            projectileXvel.append(Xvelupdater)
+            projectileYvel.append(Yvelupdater)
+            projectileT.append(Tupdater)
+            projectileTick.append(Tickupdater)
+    if x > X - (Y-y) and x < X + (Y-y) and Y > y:
+        pygame.draw.circle(window,(150,150,150),(X,Y-30),5,2)
+    elif playerD:
+        pygame.draw.circle(window,(150,150,150),(X+30,Y),5,2)
+    elif not playerD:
+        pygame.draw.circle(window,(150,150,150),(X-30,Y),5,2)
+    if pound:
+        pygame.draw.circle(window,(200,200,200),(X,Y+21),10)
+        pygame.draw.line(window,(200,200,200),(X,Y+21),(X,Y+10),20)
+        for i in range(3):
+            lineX = random.randint(-7,7)
+            pygame.draw.line(window,(200,200,200),(X+lineX,Y+10),(X+lineX,Y),5)
+    if playerD:
+        if down:
+            pygame.draw.line(window,(cloakr,cloakg,cloakb),(X,Y),(X-3,Y+15),10)
+            pygame.draw.line(window,(cloakr,cloakg,cloakb),(X-3,Y+15),(X-3,Y+20),10)
+            if cloak == 1:
+                pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X,Y),(X-3,Y+15),2)
+                pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X-3,Y+15),(X-3,Y+20),2)
+            else:
+                pygame.draw.line(window,(0,0,0),(X,Y),(X-3,Y+15),2)
+                pygame.draw.line(window,(0,0,0),(X-3,Y+15),(X-3,Y+20),2)
+
+            pygame.draw.ellipse(window,(int(cloakr*0.9),int(cloakg*0.9),int(cloakb*0.9)),pygame.Rect(X-10,Y-9,10,10))
+            pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-10,Y-9,19,19))
+            
+            pygame.draw.ellipse(window,(255,200,150),pygame.Rect(X-4,Y,12,8))
+            pygame.draw.ellipse(window,(120,100,80),pygame.Rect(X-4,Y-2,12,8))
+            pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-4,Y-4,12,8))
+        else:
+            if down:
+                pygame.draw.line(window,(cloakr,cloakg,cloakb),(X,Y),(X-3,Y+15),10)
+                pygame.draw.line(window,(cloakr,cloakg,cloakb),(X-3,Y+15),(X-3,Y+20),10)
+
+                if cloak == 1:
+                    pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X,Y),(X,Y+20),2)
+                else:
+                    pygame.draw.line(window,(0,0,0),(X,Y),(X-3,Y+15),2)
+                    pygame.draw.line(window,(0,0,0),(X-3,Y+15),(X-3,Y+20),2)
+
+                pygame.draw.ellipse(window,(int(cloakr*0.9),int(cloakg*0.9),int(cloakb*0.9)),pygame.Rect(X-10,Y-11,10,10))
+                pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-10,Y-11,19,19))
+                
+                pygame.draw.ellipse(window,(255,200,150),pygame.Rect(X-4,Y-4,12,8))
+                pygame.draw.ellipse(window,(120,100,80),pygame.Rect(X-4,Y-6,12,8))
+                pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-4,Y-8,12,8))
+            else:
+                pygame.draw.line(window,(cloakr,cloakg,cloakb),(X,Y),(X,Y+20),10)
+                if pound:
+                    pygame.draw.line(window,(cloakr,cloakg+100,cloakb+100),(X,Y+20),(X,Y+10),10)
+                if cloak == 1:
+                    pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X,Y),(X,Y+20),2)
+                else:
+                    pygame.draw.line(window,(0,0,0),(X,Y),(X,Y+20),2)
+                pygame.draw.ellipse(window,(int(cloakr*0.9),int(cloakg*0.9),int(cloakb*0.9)),pygame.Rect(X-10,Y-11,10,10))
+                pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-10,Y-11,19,19))
+                
+                pygame.draw.ellipse(window,(255,200,150),pygame.Rect(X-4,Y-4,12,8))
+                pygame.draw.ellipse(window,(120,100,80),pygame.Rect(X-4,Y-6,12,8))
+                pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-4,Y-8,12,8))
+        
+        
+        
+    else:
+        if down:
+            pygame.draw.line(window,(cloakr,cloakg,cloakb),(X,Y),(X+3,Y+15),10)
+            pygame.draw.line(window,(cloakr,cloakg,cloakb),(X+3,Y+15),(X+3,Y+20),10)
+            if cloak == 1:
+                pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X,Y),(X+3,Y+15),2)
+                pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X+3,Y+15),(X-3,Y+20),2)
+            else:
+                pygame.draw.line(window,(0,0,0),(X,Y),(X+3,Y+15),2)
+                pygame.draw.line(window,(0,0,0),(X+3,Y+15),(X+3,Y+20),2)
+            pygame.draw.ellipse(window,(int(cloakr*0.9),int(cloakg*0.9),int(cloakb*0.9)),pygame.Rect(X-1,Y-9,10,10))
+            pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-10,Y-9,19,19))
+            
+            pygame.draw.ellipse(window,(255,200,150),pygame.Rect(X-8,Y,12,8))
+            pygame.draw.ellipse(window,(120,100,80),pygame.Rect(X-8,Y-2,12,8))
+            pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-8,Y-4,12,8))
+        else:
+            pygame.draw.line(window,(cloakr,cloakg,cloakb),(X,Y),(X,Y+20),10)
+            if pound:
+                pygame.draw.line(window,(cloakr,cloakg+100,cloakb+100),(X,Y+20),(X,Y+10),10)
+            if cloak == 1:
+                pygame.draw.line(window,(cloakr*-1+255,cloakg*-1+255,cloakb*-1+255),(X,Y),(X,Y+20),2)
+            else:
+                pygame.draw.line(window,(0,0,0),(X,Y),(X,Y+20),2)
+            pygame.draw.ellipse(window,(int(cloakr*0.9),int(cloakg*0.9),int(cloakb*0.9)),pygame.Rect(X-1,Y-11,10,10))
+            pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-10,Y-11,19,19))
+            
+            pygame.draw.ellipse(window,(255,200,150),pygame.Rect(X-8,Y-4,12,8))
+            pygame.draw.ellipse(window,(120,100,80),pygame.Rect(X-8,Y-6,12,8))
+            pygame.draw.ellipse(window,(cloakr,cloakg,cloakb),pygame.Rect(X-8,Y-8,12,8))
+    for i in range(len(Objects)):
+        pygame.draw.rect(window,(0,0,0),pygame.Rect(ObjectX[i],ObjectY[i],ObjectWidth[i],ObjectHeight[i]),0)
+    for i in range(len(Enemies)):
+        CEnemyTick = EnemyTick[0]
+        EnemyTick.remove(EnemyTick[0])
+        CEnemyX = EnemyX[0]
+        EnemyX.remove(EnemyX[0])
+        CEnemyY = EnemyY[0]
+        EnemyY.remove(EnemyY[0])
+        CEnemyT = EnemyT[0]
+        EnemyT.remove(EnemyT[0])
+        CEnemyXvel = EnemyXvel[0]
+        EnemyXvel.remove(EnemyXvel[0])
+        CEnemyYvel = EnemyYvel[0]
+        EnemyYvel.remove(EnemyYvel[0])
+        CEnemyTick += 1
+        if CEnemyTick > 20:
+            if CEnemyT == 0:
+                if CEnemyX > X:
+                    CEnemyXvel -= 1
+                if CEnemyX < X:
+                    CEnemyXvel += 1
+                CEnemyXvel *= 0.8
+                CEnemyYvel += 2
+                for i in range(len(Objects)):
+                    CObjectWidth = ObjectWidth[i]
+                    CObjectX = ObjectX[i]
+                    CObjectY = ObjectY[i]
+                    CObjectHeight = ObjectHeight[i]
+                    if CEnemyY + CEnemyYvel >= CObjectY - 11 and CEnemyY + CEnemyYvel <= CObjectY + CObjectHeight and CEnemyX >= CObjectX - 10 and CEnemyX <= CObjectX + CObjectWidth + 10 and Y < CEnemyY - 40:
+                        CEnemyYvel = -19
+                    elif CEnemyY + CEnemyYvel >= CObjectY - 9 and CEnemyY + CEnemyYvel <= CObjectY + CObjectHeight and CEnemyX >= CObjectX - 10 and CEnemyX <= CObjectX + CObjectWidth + 10:
+                        CEnemyYvel *= -0.01
+                    if CEnemyY >= CObjectY and CEnemyY <= CObjectY + CObjectHeight and CEnemyX + CEnemyXvel >= CObjectX - 10 and CEnemyX + CEnemyXvel <= CObjectX + CObjectWidth + 10:
+                        CEnemyXvel *= -0.25
+                CEnemyX += CEnemyXvel
+                CEnemyY += CEnemyYvel
+        EnemyTick.append(CEnemyTick)
+        EnemyX.append(CEnemyX)
+        EnemyY.append(CEnemyY)
+        EnemyT.append(CEnemyT)
+        EnemyXvel.append(CEnemyXvel)
+        EnemyYvel.append(CEnemyYvel)
+    for i in range(len(Enemies)):
+        if EnemyTick[i] <= 20:
+            if EnemyTick[i] < 5:
+                pygame.draw.ellipse(window, (200, 200, 200), pygame.Rect(round(EnemyX[i]) - 20, round(EnemyY[i]-1), 40, 2))
+            elif EnemyTick[i] < 10:
+                pygame.draw.ellipse(window, (150, 150, 150), pygame.Rect(round(EnemyX[i] - 16), round(EnemyY[i] - 4), 32, 8))
+            elif EnemyTick[i] < 15:
+                pygame.draw.ellipse(window, (100, 100, 100), pygame.Rect(round(EnemyX[i] - 14), round(EnemyY[i] - 8), 28, 16))
+            else:
+                pygame.draw.ellipse(window, (50,50,50), pygame.Rect(round(EnemyX[i] - 10), round(EnemyY[i] - 10), 20, 20))
+        else:
+            pygame.draw.circle(window,(0,0,0),(round(EnemyX[i]),round(EnemyY[i])),10)
+    pygame.draw.line(window, (150, 150, 150), (10, 550), (60, 550),50)
+    if basic == 0:
+      pygame.draw.circle(window, (175, 175, 175), (35, 550), 15)
+      pygame.draw.circle(window, (150, 150, 150), (30, 555), 15)
+    pygame.draw.polygon(window, (125, 125, 125), [(10, 525), (10, 575), (60, 575), (60, 525)], 2)
+    pygame.draw.line(window, (150, 150, 150), (120, 550), (70, 550),50)
+    pygame.draw.polygon(window, (125, 125, 125), [(70, 525), (70, 575), (120, 575), (120, 525)], 2)
+    if primary == 1:
+      pygame.draw.line(window, (255, 220, 0), (89, 538), (89, 545),3)
+      pygame.draw.line(window, (255, 220, 0), (98, 535), (98, 545), 3)
+      pygame.draw.ellipse(window, (255, 220, 0), pygame.Rect(85, 540, 20, 20))
+      pygame.draw.circle(window, (255, 255, 100), (95, 550), 6)
+    pygame.draw.line(window, (150, 150, 150), (180, 550), (130, 550),50)
+    pygame.draw.polygon(window, (125, 125, 125), [(130, 525), (130, 575), (180, 575), (180, 525)], 2)
+    if secondary == 2:
+      pygame.draw.line(window, (255, 255, 0), (150, 545), (170, 540), 4)
+      pygame.draw.line(window, (255, 255, 0), (150, 545), (160, 555), 4)
+      pygame.draw.line(window, (255, 255, 0), (160, 555), (140, 560), 4)
+    pygame.draw.line(window, (150, 150, 150), (240, 550), (190, 550),50)
+    pygame.draw.polygon(window, (125, 125, 125), [(190, 525), (190, 575), (240, 575), (240, 525)], 2)
+    if trimary == 4:
+      pygame.draw.ellipse(window, (120, 120, 120), pygame.Rect(220, 540, 10, 20))
+      pygame.draw.ellipse(window, (110, 110, 110), pygame.Rect(219, 545, 12, 18))
+      pygame.draw.ellipse(window, (120, 120, 120), pygame.Rect(200, 540, 10, 20))
+      pygame.draw.ellipse(window, (110, 110, 110), pygame.Rect(199, 545, 12, 18))
+      pygame.draw.line(window, (0, 0, 0), (192, 563), (238, 563), 20)
+      pygame.draw.line(window, (200, 200, 200), (215, 540), (215, 553), 3)
+      pygame.draw.line(window, (200, 200, 200), (215, 553), (210, 550), 3)
+      pygame.draw.line(window, (200, 200, 200), (215, 553), (220, 550), 3)
+    if primarycharge > 0:
+      pygame.draw.line(window, (0, 0, 255), (10, 590), (10 + primarycharge*10, 590), 20)
+    pygame.display.flip()
+    pygame.time.wait(30)
+    primarycooldown += 1
+    secondarycooldown += 1
+    basiccooldown += 1
+    trimarycooldown += 1
